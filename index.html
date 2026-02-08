@@ -1,9 +1,1161 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Test</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🌍</text></svg>">
+<style>
+  @font-face {
+    font-family: 'Monaspace Neon';
+    src: url('MonaspaceNeon-Light.woff2') format('woff2');
+    font-weight: 300;
+    font-style: normal;
+  }
+
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+  :root {
+    --pixel-size: 4px;
+    --bg: #0a0a0a;
+    --text: #e8e8e8;
+    --text-dim: rgba(255,255,255,0.45);
+    --line: rgba(255,255,255,0.07);
+    --accent: #4f8fe6;
+    --cursor-color: #4f8fe6;
+  }
+
+  [data-theme="light"] {
+    --bg: #eeede6;
+    --text: #1a1a1a;
+    --text-dim: rgba(0,0,0,0.42);
+    --line: rgba(0,0,0,0.07);
+    --accent: #00aa2a;
+  }
+
+  html, body {
+    width:100%; height:100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Monaspace Neon', monospace;
+    cursor: none;
+    overflow: hidden;
+    user-select: none;
+    transition: background 0.4s, color 0.4s;
+  }
+
+  .cursor {
+    position: fixed;
+    width: 12px;
+    height: 12px;
+    pointer-events: none;
+    z-index: 9999;
+    transition: background 0.15s;
+  }
+  .cursor::before,
+  .cursor::after {
+    content: '';
+    position: absolute;
+    background: var(--cursor-color);
+  }
+  .cursor::before {
+    /* Vertical bar */
+    left: 4px;
+    top: 0;
+    width: 4px;
+    height: 12px;
+  }
+  .cursor::after {
+    /* Horizontal bar */
+    left: 0;
+    top: 4px;
+    width: 12px;
+    height: 4px;
+  }
+
+  /* ─── TOP NAV ─── */
+  .topnav {
+    position: fixed;
+    top:0; left:0; right:0;
+    height: 36px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    z-index: 100;
+    transition: background 0.4s;
+  }
+  .nav-left {
+    display: flex; align-items: center; gap: 0.6rem;
+    font-size: 1.8rem; color: var(--text-dim); letter-spacing: 0.15em;
+  }
+  .nav-left .prompt { color: var(--cursor-color); transition: color 0.4s; }
+  .nav-links { display:flex; gap:1.5rem; }
+  .nav-links a {
+    font-size: 1.74rem; color: var(--text-dim); text-decoration: none;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    transition: color 0.2s; cursor: none;
+  }
+  .nav-links a:hover { color: var(--text); }
+  .nav-links a.active { color: var(--cursor-color); }
+
+  canvas#net {
+    position: fixed; top: 36px; left: 0;
+    width: 100%; height: calc(100% - 36px);
+    z-index: 1;
+  }
+
+  .instructions {
+    position: fixed; top: 116px; left: 12px;
+    z-index: 50; font-size: 1.2rem;
+    color: var(--text-dim); letter-spacing: 0.1em;
+    line-height: 1.3; pointer-events: none;
+    transition: color 0.4s;
+  }
+  .instructions .prompt { color: var(--text-dim); transition: color 0.4s; }
+
+  .page-title {
+    position: fixed; top: 44px; left: 12px;
+    z-index: 50; font-size: 1.2rem;
+    color: var(--text-dim); letter-spacing: 0.1em;
+    line-height: 1.3; pointer-events: none;
+    transition: color 0.4s;
+    text-align: left;
+    font-family: 'Monaspace Neon', monospace;
+    white-space: pre;
+  }
+
+  /* ─── BOTTOM BAR ─── */
+  .bottom-bar {
+    position: fixed; bottom:0; left:0; right:0; height: 34px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 1.2rem; border-top: 1px solid var(--line);
+    background: var(--bg); z-index: 100; transition: background 0.4s;
+  }
+  .bar-left { font-size:1.56rem; color:var(--text-dim); letter-spacing:0.14em; text-transform:uppercase; display:flex; gap:1.5rem; }
+  .bar-right { display:flex; align-items:center; gap:0.8rem; }
+
+  .theme-toggle {
+    font-size:1.56rem; color:var(--text-dim); letter-spacing:0.14em; text-transform:uppercase;
+    background:none; border:1px solid var(--line); padding:0.25rem 0.5rem;
+    font-family:inherit; cursor:none; transition:border-color 0.2s, color 0.2s;
+  }
+  .theme-toggle:hover { border-color:var(--cursor-color); color:var(--text); }
+
+  .color-picker { position:relative; }
+  .color-btn {
+    display:flex; align-items:center; gap:0.45rem;
+    background:none; border:1px solid var(--line); padding:0.25rem 0.5rem;
+    font-family:inherit; font-size:1.56rem; color:var(--text-dim);
+    letter-spacing:0.12em; text-transform:uppercase; cursor:none; transition:border-color 0.2s;
+  }
+  .color-btn:hover { border-color:var(--cursor-color); }
+  .color-swatch { width:var(--pixel-size); height:var(--pixel-size); background:var(--cursor-color); image-rendering:pixelated; }
+
+  .color-dropdown {
+    position:absolute; bottom:calc(100% + 4px); right:0;
+    background:var(--bg); border:1px solid var(--line); padding:0.35rem;
+    display:none; flex-direction:column; gap:1px; min-width:130px; z-index:200; transition:background 0.4s;
+  }
+  .color-dropdown.open { display:flex; }
+
+  .color-option {
+    display:flex; align-items:center; gap:0.5rem; padding:0.3rem 0.45rem;
+    background:none; border:none; font-family:inherit; font-size:1.56rem;
+    color:var(--text-dim); letter-spacing:0.1em; text-transform:uppercase;
+    cursor:none; text-align:left; transition:background 0.15s;
+  }
+  .color-option:hover { background:var(--line); color:var(--text); }
+  .opt-swatch { width:var(--pixel-size); height:var(--pixel-size); image-rendering:pixelated; flex-shrink:0; }
+</style>
 </head>
-<body>
-    <h1>Hello World</h1>
+<body data-theme="dark">
+
+<div class="cursor" id="cursor"></div>
+
+<nav class="topnav">
+  <div class="nav-left">
+    <span class="prompt">&gt;&gt;</span>
+    <span>SUBI</span>
+  </div>
+  <div class="nav-links">
+    <a href="about.html">About</a>
+    <a href="portfolio.html" class="active">Portfolio</a>
+    <a href="collection.html">Collection</a>
+  </div>
+</nav>
+
+<div class="instructions">
+  <span class="prompt">//</span> scroll to zoom<br>
+  <span class="prompt">//</span> drag sphere to rotate<br>
+  <span class="prompt">//</span> drag outside to pan<br>
+  <span class="prompt">//</span> click to place pixel
+</div>
+
+<div class="page-title">// ═══════════════════════════════════════════════
+// PORTFOLIO
+// ═══════════════════════════════════════════════</div>
+
+<canvas id="net"></canvas>
+
+<div class="bottom-bar">
+  <div class="bar-left">
+    <span>© 2025</span>
+    <span id="clock">00:00:00</span>
+  </div>
+  <div class="bar-right">
+    <button class="theme-toggle" id="centerBtn">Center</button>
+    <button class="theme-toggle" id="themeBtn">Dark</button>
+    <div class="color-picker">
+      <button class="color-btn" id="colorBtn">
+        <span class="color-swatch"></span>
+        <span>Color</span>
+      </button>
+      <div class="color-dropdown" id="colorDropdown">
+        <button class="color-option" data-color="#b875eb"><span class="opt-swatch" style="background:#b875eb"></span> Lilac</button>
+        <button class="color-option" data-color="#99b333"><span class="opt-swatch" style="background:#99b333"></span> Olive</button>
+        <button class="color-option" data-color="#4f8fe6"><span class="opt-swatch" style="background:#4f8fe6"></span> Olympic Blue</button>
+        <button class="color-option" data-color="#FFAF39"><span class="opt-swatch" style="background:#FFAF39; border:1px solid rgba(0,0,0,0.2)"></span> Honey</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════
+const PS = 4;
+
+const ICON = [[0,0,1,1],[0,1,0,0],[0,0,1,0],[1,1,0,0]];
+const ICON_PX = 3;
+
+const PROJECTS = [
+  { id:'center', label:null },
+  { id:'a', label:'box breathe' },
+  { id:'b', label:'using what we have' },
+  { id:'c', label:'ultra processed foods' },
+  { id:'d', label:'some numbers' },
+  { id:'e', label:"it's a simulation" },
+  { id:'f', label:'gatherer' },
+  { id:'g', label:'pixel art graveyard' },
+  { id:'h', label:'the few' },
+  { id:'i', label:'conflated threads' },
+  { id:'j', label:'sketchy' },
+];
+
+// const NUM_DUDS = 8; // Number of decorative dud nodes
+
+const EDGES_EXTRA = [['b','j'],['c','e'],['d','f'],['g','h'],['h','i'],['a','b']];
+
+const BOX_W = 100;
+const BOX_H = 72;
+
+// ═══════════════════════════════════════════════
+// CANVAS
+// ═══════════════════════════════════════════════
+const canvas = document.getElementById('net');
+const ctx = canvas.getContext('2d');
+let W, H;
+const OFFSET_Y = 36;
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight - OFFSET_Y;
+  canvas.style.height = H+'px';
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let isDark = true;
+let cam = { x:0, y:0, zoom:1 };
+let sphereRotation = 0; // current rotation angle
+let sphereTilt = 23.5 * Math.PI / 180; // current tilt angle
+let isManualRotating = false;
+let manualRotateStart = { mx: 0, my: 0, rotation: 0, tilt: 0 };
+const SPHERE_RADIUS = Math.min(W,H) * 0.28;
+const TARGET_TILT = 23.5 * Math.PI / 180; // target tilt (23.5 degrees)
+const ROTATION_SPEED = 0.002; // auto-rotation speed
+
+// Seeded random for sphere positions
+function sphereRand(seed) {
+  let s = seed;
+  return () => { s=(s*1664525+1013904223)&0x7fffffff; return s/0x7fffffff; };
+}
+
+// Random offset that changes on each page load
+const randomSeed = Math.floor(Math.random() * 1000000);
+
+const nodes = {};
+
+// Check if a 3D position is too close to existing nodes
+function isTooClose(x, y, z, minDist) {
+  for (const id in nodes) {
+    const n = nodes[id];
+    const dx = x - n.x3d;
+    const dy = y - n.y3d;
+    const dz = z - n.z3d;
+    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+    if (dist < minDist) return true;
+  }
+  return false;
+}
+
+// Position project nodes on sphere surface with 3D octant distribution
+// Octants divide the sphere into 8 sections based on +/- x, y, z
+const octants = [
+  { xPos: true,  yPos: true,  zPos: true  }, // 0: +x +y +z
+  { xPos: true,  yPos: true,  zPos: false }, // 1: +x +y -z
+  { xPos: true,  yPos: false, zPos: true  }, // 2: +x -y +z
+  { xPos: true,  yPos: false, zPos: false }, // 3: +x -y -z
+  { xPos: false, yPos: true,  zPos: true  }, // 4: -x +y +z
+  { xPos: false, yPos: true,  zPos: false }, // 5: -x +y -z
+  { xPos: false, yPos: false, zPos: true  }, // 6: -x -y +z
+  { xPos: false, yPos: false, zPos: false }  // 7: -x -y -z
+];
+
+const projectsWithoutCenter = PROJECTS.filter(p => p.id !== 'center');
+const nodesPerOctant = Math.ceil(projectsWithoutCenter.length / 8);
+
+PROJECTS.forEach((p, i) => {
+  if (p.id === 'center') {
+    nodes[p.id] = { x3d:0, y3d:0, z3d:0, label:null, isCenter:true, isDud:false };
+  } else {
+    // Determine which octant this node belongs to
+    const projectIndex = projectsWithoutCenter.findIndex(proj => proj.id === p.id);
+    const octantIdx = Math.floor(projectIndex / nodesPerOctant) % 8;
+    const octant = octants[octantIdx];
+
+    // Convert octant to spherical coordinate ranges
+    // Theta (azimuth in xy-plane): 0 to 2π
+    let thetaMin, thetaMax;
+    if (octant.xPos && octant.yPos) {
+      thetaMin = 0; thetaMax = Math.PI / 2;
+    } else if (!octant.xPos && octant.yPos) {
+      thetaMin = Math.PI / 2; thetaMax = Math.PI;
+    } else if (!octant.xPos && !octant.yPos) {
+      thetaMin = Math.PI; thetaMax = 3 * Math.PI / 2;
+    } else { // xPos && !yPos
+      thetaMin = 3 * Math.PI / 2; thetaMax = 2 * Math.PI;
+    }
+
+    // Phi (inclination from z-axis): 0 to π
+    const phiMin = octant.zPos ? 0 : Math.PI / 2;
+    const phiMax = octant.zPos ? Math.PI / 2 : Math.PI;
+
+    const rand = sphereRand(i*1337+42+randomSeed);
+    const minDist = SPHERE_RADIUS * 0.35;
+    let x3d, y3d, z3d;
+    let attempts = 0;
+
+    // Try to find a non-colliding position within octant
+    do {
+      const phi = phiMin + rand() * (phiMax - phiMin);
+      const theta = thetaMin + rand() * (thetaMax - thetaMin);
+
+      x3d = SPHERE_RADIUS * Math.sin(phi) * Math.cos(theta);
+      y3d = SPHERE_RADIUS * Math.sin(phi) * Math.sin(theta);
+      z3d = SPHERE_RADIUS * Math.cos(phi);
+      attempts++;
+    } while (isTooClose(x3d, y3d, z3d, minDist) && attempts < 100);
+
+    nodes[p.id] = {
+      x3d: x3d,
+      y3d: y3d,
+      z3d: z3d,
+      label: p.label,
+      isCenter: false,
+      isDud: false,
+      revealT: 0
+    };
+  }
+});
+
+/* // Add dud nodes (decorative non-interactive nodes)
+const dudPatterns = []; // Store 2x2 grayscale patterns for each dud
+for (let i = 0; i < NUM_DUDS; i++) {
+  const dudId = `dud${i}`;
+  const rand = sphereRand(i*7919+31337+randomSeed);
+
+  // Random position on sphere with collision detection
+  const minDist = SPHERE_RADIUS * 0.35; // Same minimum distance as projects
+  let x3d, y3d, z3d;
+  let attempts = 0;
+
+  // Try to find a non-colliding position
+  do {
+    const phi = Math.acos(2*rand() - 1);
+    const theta = rand() * Math.PI * 2;
+    x3d = SPHERE_RADIUS * Math.sin(phi) * Math.cos(theta);
+    y3d = SPHERE_RADIUS * Math.sin(phi) * Math.sin(theta);
+    z3d = SPHERE_RADIUS * Math.cos(phi);
+    attempts++;
+  } while (isTooClose(x3d, y3d, z3d, minDist) && attempts < 100);
+
+  nodes[dudId] = {
+    x3d: x3d,
+    y3d: y3d,
+    z3d: z3d,
+    label: null,
+    isCenter: false,
+    isDud: true
+  };
+
+  // Generate random 2x2 grayscale pattern
+  const pattern = [];
+  for (let r = 0; r < 2; r++) {
+    pattern[r] = [];
+    for (let c = 0; c < 2; c++) {
+      const gray = Math.floor(rand() * 256);
+      pattern[r][c] = rand() > 0.4 ? gray : 0; // 40% chance of being filled
+    }
+  }
+  dudPatterns.push(pattern);
+} */
+
+const edges = [];
+PROJECTS.forEach(p => { if (p.id !== 'center') edges.push(['center', p.id]); });
+EDGES_EXTRA.forEach(e => edges.push(e));
+
+/* // Add random edges for dud nodes
+const projectIds = PROJECTS.filter(p => p.id !== 'center').map(p => p.id);
+const allNodeIds = [...projectIds];
+for (let i = 0; i < NUM_DUDS; i++) {
+  const dudId = `dud${i}`;
+  allNodeIds.push(dudId);
+}
+
+// Create random connections for each dud
+const dudRand = sphereRand(42424+randomSeed);
+for (let i = 0; i < NUM_DUDS; i++) {
+  const dudId = `dud${i}`;
+  const numConnections = Math.floor(dudRand() * 3) + 1; // 1-3 connections
+
+  for (let j = 0; j < numConnections; j++) {
+    // Connect to random node (project or another dud)
+    const targetId = allNodeIds[Math.floor(dudRand() * allNodeIds.length)];
+    if (targetId !== dudId) { // Don't connect to self
+      edges.push([dudId, targetId]);
+    }
+  }
+} */
+
+const pixels = [];
+let cursorColor = '#4f8fe6';
+
+// ─── Project Images ───
+const projectImages = {
+  'j': 'sketchy.jpeg',
+  'c': 'banana.png',
+  'g': 'graveyard.png',
+  // Add more project images here
+  // 'a': 'box-breathe.jpg',
+  // 'b': 'using-what-we-have.jpg',
+  // etc.
+};
+
+const loadedImages = {};
+const imageData = {}; // Store 8x8 grids of color data
+
+// Load and process images
+function loadProjectImages() {
+  Object.keys(projectImages).forEach(id => {
+    const img = new Image();
+    // Remove crossOrigin for local files
+    // img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      console.log(`Successfully loaded image for project ${id}: ${projectImages[id]}`);
+      loadedImages[id] = img;
+      // Extract 8x8 color grid
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = 8;
+      tempCanvas.height = 8;
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCtx.drawImage(img, 0, 0, 8, 8);
+      const pixels = tempCtx.getImageData(0, 0, 8, 8);
+      const colors = [];
+      for (let i = 0; i < pixels.data.length; i += 4) {
+        colors.push([pixels.data[i], pixels.data[i+1], pixels.data[i+2]]);
+      }
+      imageData[id] = colors;
+      console.log(`Extracted ${colors.length} color pixels for project ${id}`);
+    };
+    img.onerror = () => {
+      console.error(`Failed to load image for project ${id}: ${projectImages[id]}`);
+    };
+    img.src = projectImages[id];
+    console.log(`Attempting to load image: ${projectImages[id]} for project ${id}`);
+  });
+}
+loadProjectImages();
+
+// Seeded placeholder for projects without images
+function seededRand(seed) {
+  let s = seed;
+  return () => { s=(s*1664525+1013904223)&0x7fffffff; return s/0x7fffffff; };
+}
+
+function genPlaceholder(id, idx) {
+  const rand = seededRand(idx*997+13);
+  const cols = [];
+  for (let i = 0; i < 64; i++) {
+    const base = isDark ? (25 + rand()*70) : (130 + rand()*90);
+    const v = Math.round(base);
+    cols.push([
+      Math.max(0,Math.min(255, v + Math.round(rand()*30-15))),
+      Math.max(0,Math.min(255, v + Math.round(rand()*30-15))),
+      Math.max(0,Math.min(255, v + Math.round(rand()*30-15)))
+    ]);
+  }
+  return cols;
+}
+
+// ═══════════════════════════════════════════════
+// 3D TRANSFORMS
+// ═══════════════════════════════════════════════
+// Rotate 3D point around Y axis (spin)
+function rotateY(x, y, z, angle) {
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  return {
+    x: x * c + z * s,
+    y: y,
+    z: -x * s + z * c
+  };
+}
+
+// Rotate 3D point around X axis (tilt)
+function rotateX(x, y, z, angle) {
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  return {
+    x: x,
+    y: y * c - z * s,
+    z: y * s + z * c
+  };
+}
+
+// Project 3D point to 2D screen (perspective projection)
+function project3D(x3d, y3d, z3d) {
+  const perspective = 800;
+  const scale = perspective / (perspective + z3d);
+
+  // Apply camera offset and zoom
+  const x2d = (x3d - cam.x) * cam.zoom * scale;
+  const y2d = (y3d - cam.y) * cam.zoom * scale;
+
+  return {
+    x: x2d + W/2,
+    y: y2d + H/2,
+    scale: scale,
+    depth: z3d
+  };
+}
+
+// Get transformed 3D position (with rotation and tilt)
+function getTransformed3D(node) {
+  // Apply Y-axis rotation (spin)
+  let p = rotateY(node.x3d, node.y3d, node.z3d, sphereRotation);
+  // Apply X-axis rotation (tilt)
+  p = rotateX(p.x, p.y, p.z, sphereTilt);
+  return p;
+}
+
+function toScreen(node) {
+  const p3d = getTransformed3D(node);
+  return project3D(p3d.x, p3d.y, p3d.z);
+}
+
+function toWorld(sx,sy) { return { x:(sx-W/2)/cam.zoom+cam.x, y:(sy-H/2)/cam.zoom+cam.y }; }
+
+// ═══════════════════════════════════════════════
+// CURSOR
+// ═══════════════════════════════════════════════
+const cursorEl = document.getElementById('cursor');
+let mx=-999, my=-999;
+document.addEventListener('mousemove', e => {
+  mx = Math.floor(e.clientX/PS)*PS;
+  my = Math.floor(e.clientY/PS)*PS;
+  // Center the 12px cursor on the position (offset by 6px)
+  cursorEl.style.left = (mx - 6)+'px';
+  cursorEl.style.top  = (my - 6)+'px';
+});
+
+// ═══════════════════════════════════════════════
+// INTERACTION
+// ═══════════════════════════════════════════════
+let panning=false, panStart={mx:0,my:0,cx:0,cy:0};
+let hoveredNode = null;
+
+function hitNode(sx, sy) {
+  // center icon
+  const cs = toScreen(nodes.center);
+  if (Math.sqrt((sx-cs.x)**2+(sy-cs.y)**2) < 14) return 'center';
+
+  // project boxes only (exclude duds) - check in reverse depth order (front to back)
+  const nodeList = Object.keys(nodes)
+    .filter(id => id !== 'center' && !nodes[id].isDud)
+    .map(id => ({ id, proj: toScreen(nodes[id]) }))
+    .sort((a, b) => a.proj.depth - b.proj.depth); // front to back
+
+  for (const {id, proj} of nodeList) {
+    const hw=BOX_W*cam.zoom*proj.scale/2, hh=BOX_H*cam.zoom*proj.scale/2;
+    if (sx>=proj.x-hw && sx<=proj.x+hw && sy>=proj.y-hh && sy<=proj.y+hh) return id;
+  }
+  return null;
+}
+
+// Check if screen point is within the sphere's projected area
+function isOnSphere(sx, sy) {
+  const center = toScreen(nodes.center);
+  const dist = Math.sqrt((sx - center.x)**2 + (sy - center.y)**2);
+  // Add some margin around the sphere
+  const sphereScreenRadius = SPHERE_RADIUS * cam.zoom * 1.2;
+  return dist < sphereScreenRadius;
+}
+
+canvas.addEventListener('mousedown', e => {
+  const sx=e.clientX, sy=e.clientY-OFFSET_Y;
+  const onSphere = isOnSphere(sx, sy);
+
+  if (onSphere) {
+    // Drag on sphere to rotate and tilt
+    isManualRotating = true;
+    manualRotateStart = {
+      mx: e.clientX,
+      my: e.clientY,
+      rotation: sphereRotation,
+      tilt: sphereTilt
+    };
+  } else {
+    // Drag outside sphere to pan
+    panning=true;
+    panStart={mx:e.clientX,my:e.clientY,cx:cam.x,cy:cam.y};
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  const sx=e.clientX, sy=e.clientY-OFFSET_Y;
+  if (panning) {
+    cam.x = panStart.cx-(e.clientX-panStart.mx)/cam.zoom;
+    cam.y = panStart.cy-(e.clientY-panStart.my)/cam.zoom;
+  } else if (isManualRotating) {
+    const dx = e.clientX - manualRotateStart.mx;
+    const dy = e.clientY - manualRotateStart.my;
+    // Horizontal drag controls rotation (reversed)
+    sphereRotation = manualRotateStart.rotation - dx * 0.01;
+    // Vertical drag controls tilt (clamp to prevent flipping)
+    sphereTilt = Math.max(-Math.PI/2, Math.min(Math.PI/2, manualRotateStart.tilt + dy * 0.005));
+  }
+  hoveredNode = hitNode(sx,sy);
+});
+
+canvas.addEventListener('mouseup', e => {
+  if (panning) {
+    const dx=e.clientX-panStart.mx, dy=e.clientY-panStart.my;
+    if (Math.abs(dx)<3 && Math.abs(dy)<3) {
+      // Use cursor position (already snapped to grid) instead of raw click position
+      const sy=my-OFFSET_Y;
+      if (!hitNode(mx,sy)) {
+        const w=toWorld(mx,sy);
+        // Snap to grid
+        const gridSize = PS;
+        const gridX = Math.round(w.x / gridSize) * gridSize;
+        const gridY = Math.round(w.y / gridSize) * gridSize;
+        pixels.push({x:gridX, y:gridY, color:cursorColor});
+      }
+    }
+  }
+  panning=false;
+  isManualRotating=false;
+});
+
+canvas.addEventListener('mouseleave', ()=>{ panning=false; isManualRotating=false; hoveredNode=null; });
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const zf = e.deltaY<0 ? 1.08 : 1/1.08;
+  cam.zoom=Math.max(0.3,Math.min(3,cam.zoom*zf));
+}, {passive:false});
+
+// ═══════════════════════════════════════════════
+// FOVEA
+// ═══════════════════════════════════════════════
+// 0 at center, 1 at edges
+function foveaDist(sx, sy) {
+  const dx=(sx-W/2)/(W*0.42), dy=(sy-H/2)/(H*0.42);
+  return Math.min(1, Math.sqrt(dx*dx+dy*dy));
+}
+
+// Glitch PRNG (deterministic per frame via seed reset)
+let _gs = 0;
+function gRand() { _gs=(_gs*1664525+1013904223)&0x7fffffff; return _gs/0x7fffffff; }
+
+// ═══════════════════════════════════════════════
+// DRAW
+// ═══════════════════════════════════════════════
+let time = 0;
+
+// Helper function to convert hex color to rgba
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function drawDotGrid(centerHovered, displayDark) {
+  // Pointillism effect when center is hovered
+  const spacing = centerHovered ? 12 : 22;
+  const wtl=toWorld(0,0), wbr=toWorld(W,H);
+  const sx0=Math.floor(wtl.x/spacing)*spacing;
+  const sy0=Math.floor(wtl.y/spacing)*spacing;
+
+  _gs = 7; // deterministic seed each frame
+
+  for (let wx=sx0; wx<wbr.x; wx+=spacing) {
+    for (let wy=sy0; wy<wbr.y; wy+=spacing) {
+      const s = toScreen(wx,wy);
+      const fd = foveaDist(s.x, s.y);
+
+      // Skip dots near edges probabilistically (less skipping for pointillism)
+      if (!centerHovered && gRand() < fd*0.5 - 0.15) continue;
+
+      let px=s.x, py=s.y;
+
+      // Jitter position toward edges (more jitter for pointillism)
+      const jitterScale = centerHovered ? 1.5 : 1.0;
+      if (fd > 0.25) {
+        const j = (fd-0.25)*22*jitterScale;
+        px += (gRand()*2-1)*j;
+        py += (gRand()*2-1)*j;
+      }
+
+      // Flicker near edges (stronger alpha for pointillism)
+      let alpha = centerHovered ? 0.35 : (displayDark ? 0.12 : 0.09);
+      if (!centerHovered) {
+        alpha *= (1 - fd*0.55);
+      }
+      if (fd > 0.55) {
+        const flick = 0.3 + Math.sin(time*12 + wx*0.5 + wy*0.7)*0.5;
+        if (gRand() < 0.35) alpha *= flick;
+      }
+      alpha = Math.max(0, Math.min(1, alpha));
+
+      const sz = centerHovered ? 2.5 : Math.max(0.5, (1.4-fd*0.7)*cam.zoom);
+      ctx.fillStyle = displayDark
+        ? `rgba(255,255,255,${alpha})`
+        : `rgba(0,0,0,${alpha})`;
+      ctx.fillRect(px-sz/2, py-sz/2, sz, sz);
+    }
+  }
+}
+
+function drawIcon(cx, cy, scale, displayDark) {
+  const px = ICON_PX*scale;
+  const tw = ICON[0].length*px, th = ICON.length*px;
+  const ox=cx-tw/2, oy=cy-th/2;
+  ctx.fillStyle = displayDark ? '#e8e8e8' : '#1a1a1a';
+  for (let r=0; r<ICON.length; r++)
+    for (let c=0; c<ICON[r].length; c++)
+      if (ICON[r][c]) ctx.fillRect(ox+c*px, oy+r*px, px, px);
+}
+
+function drawSimpleCircle(cx, cy, scale, isDud, displayDark) {
+  const radius = isDud ? 8*scale : 15*scale;
+  ctx.fillStyle = hexToRgba(cursorColor, displayDark ? 0.6 : 0.5);
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/* function drawDudNode(cx, cy, scale, pattern) {
+  const px = 5.0*scale; // 2x larger pixel size for duds
+  const tw = 2*px, th = 2*px;
+  const ox=cx-tw/2, oy=cy-th/2;
+
+  for (let r=0; r<2; r++) {
+    for (let c=0; c<2; c++) {
+      const gray = pattern[r][c];
+      if (gray > 0) {
+        ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
+        ctx.fillRect(ox+c*px, oy+r*px, px, px);
+      }
+    }
+  }
+} */
+
+// Draw longitude lines to show sphere structure
+function drawLongitudeLines(displayDark) {
+  const numLines = 16; // number of longitude lines
+  const segments = 60;
+
+  ctx.strokeStyle = hexToRgba(cursorColor, displayDark ? 0.32 : 0.27);
+  ctx.lineWidth = 1.0;
+
+  for (let line = 0; line < numLines; line++) {
+    const longitude = (line / numLines) * Math.PI * 2;
+
+    ctx.beginPath();
+    let firstPoint = null;
+
+    for (let i = 0; i <= segments; i++) {
+      // Create a circle from pole to pole
+      const phi = (i / segments) * Math.PI; // 0 to PI (north to south pole)
+      const x = SPHERE_RADIUS * Math.sin(phi) * Math.cos(longitude);
+      const y = SPHERE_RADIUS * Math.cos(phi);
+      const z = SPHERE_RADIUS * Math.sin(phi) * Math.sin(longitude);
+
+      // Apply same transformations as nodes
+      let p = rotateY(x, y, z, sphereRotation);
+      p = rotateX(p.x, p.y, p.z, sphereTilt);
+      const proj = project3D(p.x, p.y, p.z);
+
+      // Only draw visible parts (front of sphere)
+      if (p.z > -SPHERE_RADIUS * 0.3) {
+        if (i === 0 || !firstPoint) {
+          ctx.moveTo(proj.x, proj.y);
+          firstPoint = { x: proj.x, y: proj.y };
+        } else {
+          ctx.lineTo(proj.x, proj.y);
+        }
+      } else if (firstPoint) {
+        ctx.stroke();
+        ctx.beginPath();
+        firstPoint = null;
+      }
+    }
+    ctx.stroke();
+  }
+}
+
+// Draw latitude lines to show sphere structure
+function drawLatitudeLines(displayDark) {
+  const latitudes = [-60, -30, 0, 30, 60]; // degrees
+  const segments = 60;
+
+  ctx.strokeStyle = hexToRgba(cursorColor, displayDark ? 0.32 : 0.27);
+  ctx.lineWidth = 1.0;
+
+  latitudes.forEach(lat => {
+    const latRad = lat * Math.PI / 180;
+    const radius = SPHERE_RADIUS * Math.cos(latRad);
+    const y = SPHERE_RADIUS * Math.sin(latRad);
+
+    ctx.beginPath();
+    let firstPoint = null;
+
+    for (let i = 0; i <= segments; i++) {
+      const theta = (i / segments) * Math.PI * 2;
+      const x = radius * Math.cos(theta);
+      const z = radius * Math.sin(theta);
+
+      // Apply same transformations as nodes
+      let p = rotateY(x, y, z, sphereRotation);
+      p = rotateX(p.x, p.y, p.z, sphereTilt);
+      const proj = project3D(p.x, p.y, p.z);
+
+      // Only draw visible parts (front of sphere)
+      if (p.z > -SPHERE_RADIUS * 0.3) {
+        if (i === 0 || !firstPoint) {
+          ctx.moveTo(proj.x, proj.y);
+          firstPoint = { x: proj.x, y: proj.y };
+        } else {
+          ctx.lineTo(proj.x, proj.y);
+        }
+      } else if (firstPoint) {
+        ctx.stroke();
+        ctx.beginPath();
+        firstPoint = null;
+      }
+    }
+    ctx.stroke();
+  });
+}
+
+function drawEdge(x1,y1,x2,y2,highlight,flowOffset=0,isDudEdge=false,displayDark=isDark) {
+  const dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
+  if (len===0) return;
+
+  if (highlight) {
+    // Engorged, flowing edges for highlighted connections
+    const dashLen=8*cam.zoom, gapLen=8*cam.zoom;
+    const cycleLen = dashLen + gapLen;
+
+    // Animate offset to create flowing effect
+    const offset = flowOffset % cycleLen;
+
+    ctx.save();
+    // Subtle glow for calmer effect
+    ctx.shadowColor = hexToRgba(cursorColor, displayDark ? 0.5 : 0.45);
+    ctx.shadowBlur = 8;
+
+    // Gentle pulsing thickness
+    const pulse = 1 + Math.sin(time * 2) * 0.15;
+    ctx.lineWidth = 2.2 * pulse;
+    ctx.lineCap = 'round';
+
+    // Draw with animated offset
+    let distance = -offset;
+    while (distance < len) {
+      const t0 = Math.max(0, distance / len);
+      const t1 = Math.min(1, (distance + dashLen) / len);
+
+      if (t1 > 0 && t0 < 1) {
+        // Calmer color intensity variation
+        const alpha = 0.75 + Math.sin((distance / cycleLen) * Math.PI * 2 + time * 1.5) * 0.15;
+        ctx.strokeStyle = hexToRgba(cursorColor, displayDark ? alpha : alpha * 0.8);
+
+        ctx.beginPath();
+        ctx.moveTo(x1+dx*t0, y1+dy*t0);
+        ctx.lineTo(x1+dx*t1, y1+dy*t1);
+        ctx.stroke();
+      }
+      distance += cycleLen;
+    }
+    ctx.restore();
+  } else {
+    // Normal edge rendering - weaker for dud edges
+    const dashLen=4*cam.zoom, gapLen=6*cam.zoom;
+    const steps=len/(dashLen+gapLen);
+
+    // Reduce opacity for edges connected to duds
+    const baseAlpha = isDudEdge ? 0.15 : 0.35;
+    ctx.strokeStyle = displayDark ? `rgba(255,255,255,${baseAlpha})` : `rgba(0,0,0,${isDudEdge ? 0.12 : 0.28})`;
+    ctx.lineWidth = 1.2;
+    ctx.lineCap = 'round';
+
+    for (let i=0; i<steps; i++) {
+      const t0=(i*(dashLen+gapLen))/len;
+      const t1=Math.min(t0+dashLen/len,1);
+      ctx.beginPath();
+      ctx.moveTo(x1+dx*t0, y1+dy*t0);
+      ctx.lineTo(x1+dx*t1, y1+dy*t1);
+      ctx.stroke();
+    }
+  }
+}
+
+function drawProjectBox(id, proj, isHov, displayDark, centerHovered) {
+  const n = nodes[id];
+  const sx = proj.x, sy = proj.y;
+  const depthScale = proj.scale;
+  const w=BOX_W*cam.zoom*depthScale, h=BOX_H*cam.zoom*depthScale;
+  const x=sx-w/2, y=sy-h/2;
+  const fd = foveaDist(sx, sy);
+
+  // Box bg - always visible, no depth fade
+  const bgAlpha = 0.04+(isHov?0.04:0);
+  ctx.fillStyle = displayDark
+    ? `rgba(255,255,255,${bgAlpha})`
+    : `rgba(255,255,255,${0.55+(isHov?0.12:0)})`;
+  ctx.fillRect(x,y,w,h);
+
+  // Border - more contrasted
+  const borderAlpha = isHov ? 0.65 : 0.35;
+  ctx.strokeStyle = isHov
+    ? hexToRgba(cursorColor, displayDark ? borderAlpha : 0.7)
+    : (displayDark ? `rgba(255,255,255,${borderAlpha})`  : `rgba(0,0,0,0.25)`);
+  ctx.lineWidth = (isHov ? 1.5 : 1) * depthScale;
+  ctx.strokeRect(x,y,w,h);
+
+  // ── Image area ──
+  const pad = 4*cam.zoom;
+  const imgX=x+pad, imgY=y+pad;
+  const imgW=w-pad*2, imgH=h*0.6;
+
+  // Reveal: 0=blocky(2x2 big pixels over 8x8), 1=full 8x8
+  // Edge degradation keeps it more blocky at periphery
+  const edgePenalty = fd * 0.5;
+  const effectiveReveal = Math.max(0, n.revealT - edgePenalty);
+  // pixelCount: how many divisions across (2=very blocky, 8=sharp)
+  const pixCount = Math.round(2 + effectiveReveal * 6); // 2..8
+  const step = Math.max(1, Math.round(8/pixCount));
+
+  // Get image data or generate placeholder
+  let data = imageData[id];
+  if (!data) {
+    const idx = PROJECTS.findIndex(p => p.id === id);
+    data = genPlaceholder(id, idx);
+  }
+
+  if (data) {
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    const cellW=imgW/8, cellH=imgH/8;
+    for (let gy=0; gy<8; gy+=step) {
+      for (let gx=0; gx<8; gx+=step) {
+        const col = data[gy*8+gx];
+
+        // Calculate greyscale value
+        const gray = Math.round(col[0] * 0.299 + col[1] * 0.587 + col[2] * 0.114);
+
+        // Interpolate from greyscale to color based on reveal
+        const r = Math.round(gray + (col[0] - gray) * effectiveReveal);
+        const g = Math.round(gray + (col[1] - gray) * effectiveReveal);
+        const b = Math.round(gray + (col[2] - gray) * effectiveReveal);
+
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.fillRect(imgX+gx*cellW, imgY+gy*cellH, cellW*step, cellH*step);
+      }
+    }
+    ctx.restore();
+  }
+
+  // ── Label ── (larger and more visible) - hidden when center is hovered
+  if (!centerHovered) {
+    const labelY = y + h - 9*cam.zoom*depthScale;
+    const fontSize = Math.max(7, 9*cam.zoom*depthScale);
+    ctx.font = `${fontSize}px 'Monaspace Neon', monospace`;
+    ctx.textBaseline = 'middle';
+    const labelAlpha = isHov ? 0.9 : 0.7;
+    ctx.fillStyle = isHov
+      ? hexToRgba(cursorColor, displayDark ? labelAlpha : 0.9)
+      : (displayDark ? `rgba(255,255,255,${labelAlpha})` : `rgba(0,0,0,0.6)`);
+    ctx.fillText(n.label, imgX, labelY);
+  }
+}
+
+function draw() {
+  time += 0.016;
+
+  // Continue automatic rotation (slower when hovering)
+  if (!isManualRotating) {
+    const rotationMultiplier = hoveredNode ? 0.3 : 1.0; // Slow down 70% when hovering
+    sphereRotation += ROTATION_SPEED * rotationMultiplier;
+    // Gradually return tilt to target (23.5 degrees) - slower snap-back
+    const tiltDiff = TARGET_TILT - sphereTilt;
+    sphereTilt += tiltDiff * 0.025; // Reduced from 0.05 for 2x slower snap-back
+  }
+
+  // Check if center is hovered for special effects
+  const centerHovered = hoveredNode === 'center';
+
+  ctx.clearRect(0,0,W,H);
+
+  // BG
+  ctx.fillStyle = isDark ? '#0a0a0a' : '#eeede6';
+  ctx.fillRect(0,0,W,H);
+
+  // Fovea dot grid (enhanced when center hovered for pointillism effect)
+  drawDotGrid(centerHovered, isDark);
+
+  // Sphere structure lines (draw early, behind everything)
+  drawLongitudeLines(isDark);
+  drawLatitudeLines(isDark);
+
+  // Painted pixels
+  pixels.forEach(p => {
+    const s={x:(p.x-cam.x)*cam.zoom+W/2, y:(p.y-cam.y)*cam.zoom+H/2};
+    ctx.fillStyle=p.color;
+    ctx.fillRect(s.x,s.y,PS*cam.zoom,PS*cam.zoom);
+  });
+
+  // Highlight set
+  const hlSet = new Set();
+  if (hoveredNode && !centerHovered) edges.forEach((e,i)=>{ if(e[0]===hoveredNode||e[1]===hoveredNode) hlSet.add(i); });
+
+  // Edges with flow animation (calmer speed)
+  const flowOffset = time * 20; // Speed of flow animation
+  edges.forEach((e,i)=>{
+    const a=nodes[e[0]], b=nodes[e[1]];
+    const sa=toScreen(a), sb=toScreen(b);
+    // Check if either endpoint is a dud
+    const isDudEdge = a.isDud || b.isDud;
+    drawEdge(sa.x,sa.y,sb.x,sb.y, hlSet.has(i), flowOffset, isDudEdge, isDark);
+  });
+
+  // Sort nodes by depth (back to front for proper rendering)
+  const nodeOrder = Object.keys(nodes).map(id => {
+    const proj = toScreen(nodes[id]);
+    return { id, proj };
+  }).sort((a, b) => b.proj.depth - a.proj.depth);
+
+  // Draw nodes
+  nodeOrder.forEach(({id, proj}) => {
+    const n = nodes[id];
+    const isHov = id === hoveredNode;
+
+    if (n.isCenter) {
+      const pulse = 1+Math.sin(time*2.5)*0.08;
+      // 3x larger base size, 9x when hovered
+      const sizeMultiplier = centerHovered ? 9 : 3;
+      drawIcon(proj.x, proj.y, cam.zoom*pulse*proj.scale*sizeMultiplier, isDark);
+    } else if (centerHovered) {
+      // Simple circles when center is hovered
+      drawSimpleCircle(proj.x, proj.y, cam.zoom*proj.scale, n.isDud, isDark);
+    } /* else if (n.isDud) {
+      // Draw dud node as small grayscale pattern
+      const dudIndex = parseInt(id.replace('dud', ''));
+      const pattern = dudPatterns[dudIndex];
+      if (pattern) {
+        drawDudNode(proj.x, proj.y, cam.zoom*proj.scale, pattern);
+      }
+    } */ else {
+      // Animate reveal for project nodes
+      const target = isHov ? 1 : 0;
+      n.revealT += (target-n.revealT)*0.08;
+      drawProjectBox(id, proj, isHov, isDark, centerHovered);
+    }
+  });
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+// ═══════════════════════════════════════════════
+// CENTER BUTTON
+// ═══════════════════════════════════════════════
+document.getElementById('centerBtn').addEventListener('click', function() {
+  // Reset camera to default position
+  cam.x = 0;
+  cam.y = 0;
+  cam.zoom = 1;
+  // Reset sphere orientation to default
+  sphereRotation = 0;
+  sphereTilt = TARGET_TILT;
+});
+
+// ═══════════════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════════════
+document.getElementById('themeBtn').addEventListener('click', function() {
+  isDark = !isDark;
+  document.body.dataset.theme = isDark ? 'dark' : 'light';
+  this.textContent = isDark ? 'Dark' : 'Light';
+});
+
+// ═══════════════════════════════════════════════
+// COLOR PICKER
+// ═══════════════════════════════════════════════
+const colorBtn  = document.getElementById('colorBtn');
+const colorDrop = document.getElementById('colorDropdown');
+colorBtn.addEventListener('click', e=>{ e.stopPropagation(); colorDrop.classList.toggle('open'); });
+document.addEventListener('click', ()=>colorDrop.classList.remove('open'));
+document.querySelectorAll('.color-option').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    cursorColor = btn.dataset.color;
+    document.documentElement.style.setProperty('--cursor-color', cursorColor);
+    colorDrop.classList.remove('open');
+  });
+});
+
+// ═══════════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════════
+function tick() {
+  const n=new Date();
+  document.getElementById('clock').textContent =
+    String(n.getHours()).padStart(2,'0')+':'+
+    String(n.getMinutes()).padStart(2,'0')+':'+
+    String(n.getSeconds()).padStart(2,'0');
+}
+tick(); setInterval(tick,1000);
+</script>
 </body>
 </html>
